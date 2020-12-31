@@ -8,26 +8,20 @@ import (
 )
 
 func main() {
-	bucket := 10
-	b := barrier.New(bucket)
+	n := 5
+	b, _ := barrier.New(n)
 
 	var wg sync.WaitGroup
-	wg.Add(bucket)
+	wg.Add(int(n))
 
-
-
-
-
-	for i := 0; i < bucket; i++ {
-
+	for i := 0; i < n; i++ {
 		go func() {
-			left := b.Obtain()
-			fmt.Printf("barrier left %d \n", left)
-			wg.Done()
+			defer wg.Done()
+
+			b.Wait()
+			fmt.Printf("goroutine went across the barrier\n")
 		}()
 	}
 
 	wg.Wait()
-	b.Obtain()
-
 }

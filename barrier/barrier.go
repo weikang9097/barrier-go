@@ -1,25 +1,43 @@
 package barrier
 
+import (
+	"errors"
+	"fmt"
+	"sync/atomic"
+)
+
+// IBarrier ...
+type IBarrier interface {
+	Wait()
+}
+
 type barrier struct {
-	N   int
-	chn chan int
+	n   int32
+	m   int32
+	chn chan struct{}
 }
 
 // New ...
-func New(bucket int) barrier {
-	return barrier{
-		N:   bucket,
-		chn: make(chan int, bucket),
+func New(bucket int) (IBarrier, error) {
+	if bucket < 1 {
+		return nil, errors.New("argument should be greater than 1")
 	}
+	return &barrier{
+		n:   int32(bucket),
+		chn: make(chan struct{}),
+	}, nil
 }
 
-func (b *barrier) Obtain() int {
+// Arrive ...
+func (b *barrier) Wait() {
+	count := atomic.AddInt32(&b.m, 1)
+	fmt.Printf("barrier: %d arrived\n", count)
 
-	b.chn <- 0
+	if count == b.n {
+		fmt.Printf("barrier: release blocking\n")
+		close(b.chn)
+		return
+	}
 
-	return len(b.chn)
-}
-
-func (b *barrier) Release() {
 	<-b.chn
 }
